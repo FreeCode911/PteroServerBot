@@ -1,0 +1,42 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Discord Bot Authentication</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+        .code-box {
+            font-size: 24px;
+            font-weight: bold;
+            padding: 15px;
+            margin: 20px 0;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+        .instructions {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Discord Bot Authentication</h1>
+    <div class="instructions">
+        <p>Your authentication code is:</p>
+    </div>
+    <div class="code-box">
+        {{ auth_code }}
+    </div>
+    <div class="instructions">
+        <p>Please copy this code and paste it in Discord where prompted.</p>
+        <p>This code will expire in 10 minutes.</p>
+    </div>
+</body>
+</html>
+    

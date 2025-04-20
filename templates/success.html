@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Authentication Successful</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+            background-color: #36393f;
+            color: #ffffff;
+        }
+        .code-box {
+            font-size: 24px;
+            font-weight: bold;
+            padding: 15px;
+            margin: 20px 0;
+            background-color: #2f3136;
+            border-radius: 5px;
+            border: 1px solid #202225;
+            color: #7289da;
+        }
+        .password-box {
+            font-size: 18px;
+            font-weight: bold;
+            padding: 15px;
+            margin: 20px 0;
+            background-color: #2f3136;
+            border-radius: 5px;
+            border: 1px solid #202225;
+            color: #43b581;
+        }
+        .instructions {
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #7289da;
+        }
+        .success-icon {
+            color: #43b581;
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+        .button {
+            display: inline-block;
+            background-color: #7289da;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        .account-info {
+            background-color: #2f3136;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        .account-info h3 {
+            margin-top: 0;
+            color: #43b581;
+        }
+    </style>
+</head>
+<body>
+    <div class="success-icon">✓</div>
+    {% if new_account %}
+    <h1>Account Created!</h1>
+    {% else %}
+    <h1>Account Linked!</h1>
+    {% endif %}
+    <p>Hello, <strong>{{ username }}</strong>! {{ success_message }}</p>
+
+    {% if new_account and password %}
+    <div class="account-info">
+        <h3>New Account Created</h3>
+        <p>A new Pterodactyl account has been created for you with the following details:</p>
+        <p><strong>Email:</strong> {{ email }}</p>
+        <p><strong>Password:</strong></p>
+        <div class="password-box">{{ password }}</div>
+        <p><strong>Important:</strong> Please save this password! You will need it to log in to the Pterodactyl Panel.</p>
+    </div>
+    {% else %}
+    <div class="account-info">
+        <h3>Account Linked</h3>
+        <p>Your Discord account has been linked to your existing Pterodactyl account.</p>
+        <p><strong>Email:</strong> {{ email }}</p>
+    </div>
+    {% endif %}
+
+    <div class="instructions">
+        <p>You can now return to Discord and use the bot commands.</p>
+        <p>Use <strong>/create</strong> to create a new server or <strong>/servers</strong> to view your existing servers.</p>
+    </div>
+
+    <a href="{{ pterodactyl_url }}" class="button" target="_blank">Access Pterodactyl Panel</a>
+</body>
+</html>

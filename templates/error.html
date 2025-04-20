@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Authentication Error</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+            background-color: #36393f;
+            color: #ffffff;
+        }
+        .error-box {
+            padding: 15px;
+            margin: 20px 0;
+            background-color: #2f3136;
+            border-radius: 5px;
+            border: 1px solid #202225;
+            color: #f04747;
+        }
+        h1 {
+            color: #f04747;
+        }
+        .error-icon {
+            color: #f04747;
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+        .button {
+            display: inline-block;
+            background-color: #7289da;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="error-icon">✗</div>
+    <h1>Authentication Error</h1>
+    
+    <div class="error-box">
+        {{ error }}
+    </div>
+    
+    <p>Please try again or contact an administrator for assistance.</p>
+    
+    <a href="/" class="button">Go Back</a>
+</body>
+</html>
