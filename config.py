@@ -66,6 +66,9 @@ SERVER_TEMPLATES = {
         'cpu': 200,      # CPU limit (300 = 3 cores)
         'nest': 5,       # Nest ID (default is 1 for Minecraft)
         'egg': 24,        # Egg ID (default is 1 for Vanilla Minecraft)
+        'env': {
+            'PHP_VERSION': '8.4'
+        }
     }
 }
 

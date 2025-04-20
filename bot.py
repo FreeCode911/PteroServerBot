@@ -169,10 +169,13 @@ async def create(interaction: discord.Interaction, template: str, name: str = No
             await interaction.response.send_message(embed=embed, ephemeral=True)
             return
 
+        # Sync the user's servers first and check if they can create more
+        await pterodactyl.sync_user_servers(user_id)
+
         # Check if the user can create more servers
         if not await pterodactyl.can_create_server(user_id):
             await interaction.response.send_message(
-                "You have reached the maximum number of servers (2). Please delete a server before creating a new one.",
+                "You have reached the maximum number of servers (2). Please delete a server before creating a new one. Use `/delete <server_id>` to delete a server.",
                 ephemeral=True
             )
             return
@@ -325,6 +328,9 @@ async def servers(interaction: discord.Interaction):
 
     await interaction.response.defer(ephemeral=True, thinking=True)
 
+    # Sync the user's servers first
+    await pterodactyl.sync_user_servers(user_id)
+
     # Get the user's servers
     pterodactyl_user_id = PTERODACTYL_USERS[user_id]
     servers = await pterodactyl.get_user_servers(pterodactyl_user_id)
@@ -424,22 +430,31 @@ async def servers(interaction: discord.Interaction):
             # Add server field
             server_info = (
                 f"**Status:** {status_emoji} {status_text}\n"
-                f"**ID:** `{server_id}`\n"
                 f"**Connection:** `{connection_info}`\n"
                 f"**Resources:** {memory_formatted} RAM | {disk_formatted} Disk | {cpu_formatted}\n"
                 f"**Panel:** [Access Server]({panel_url})"
             )
 
             embed.add_field(
-                name=f"🎮 {server['name']}",
+                name=f"🎮 {server['name']} (ID: `{server_id}`)",
                 value=server_info,
                 inline=False
             )
 
-        # Add a note about how to create more servers
+        # Add a note about how to create more servers and delete servers
         if len(servers) < 2:
-            embed.set_footer(text=f"You can create {2 - len(servers)} more server(s). Use /templates to see available templates.")
+            embed.add_field(
+                name="💬 Commands",
+                value=f"• Use `/delete <server_id>` to delete a server\n• Use `/create <template>` to create a new server\n• Use `/templates` to see available templates",
+                inline=False
+            )
+            embed.set_footer(text=f"You can create {2 - len(servers)} more server(s) out of a maximum of 2.")
         else:
+            embed.add_field(
+                name="💬 Commands",
+                value=f"• Use `/delete <server_id>` to delete a server\n• Use `/templates` to see available templates",
+                inline=False
+            )
             embed.set_footer(text="You have reached the maximum number of servers.")
 
         await interaction.followup.send(embed=embed, ephemeral=True)
@@ -457,6 +472,124 @@ async def servers(interaction: discord.Interaction):
         embed.set_footer(text="You can create up to 2 servers with your account.")
         await interaction.followup.send(embed=embed, ephemeral=True)
 
+@bot.tree.command(name="delete", description="Delete one of your servers")
+async def delete_server(interaction: discord.Interaction):
+    """Delete a server - shows a list of your servers to choose from"""
+    user_id = str(interaction.user.id)
+
+    # Check if the user is linked to a Pterodactyl account
+    if user_id not in PTERODACTYL_USERS:
+        await interaction.response.send_message(
+            "You need to link your account first. Use `/link` to get started.",
+            ephemeral=True
+        )
+        return
+
+    await interaction.response.defer(ephemeral=True, thinking=True)
+
+    # Sync the user's servers first
+    await pterodactyl.sync_user_servers(user_id)
+
+    # Get the user's servers
+    pterodactyl_user_id = PTERODACTYL_USERS[user_id]
+    servers = await pterodactyl.get_user_servers(pterodactyl_user_id)
+
+    # Show the list of servers
+    if not servers:
+        await interaction.followup.send(
+            "You don't have any servers to delete.",
+            ephemeral=True
+        )
+        return
+
+    embed = discord.Embed(
+        title="🖥️ Your Servers",
+        description="Select a server to delete by clicking the button below it.",
+        color=discord.Color.blue()
+    )
+
+    # Create a view with buttons for each server
+    view = discord.ui.View(timeout=120)
+
+    # Add server information to the embed
+    for server in servers:
+        # Get server identifier (the one used in the panel URL)
+        server_identifier = server.get('identifier', server.get('uuid', server.get('id', 'Unknown')))
+        server_name = server['name']
+        server_id = server['id']
+
+        # Format the server information
+        embed.add_field(
+            name=f"🎮 {server_name}",
+            value=f"**Panel ID:** `{server_identifier}`\n**Internal ID:** `{server_id}`",
+            inline=False
+        )
+
+        # Add a button for this server
+        button = discord.ui.Button(label=f"Delete {server_name}", style=discord.ButtonStyle.danger, custom_id=f"delete_{server_id}")
+
+        # Define the callback for this button
+        async def button_callback(interaction, server_id=server_id, server_name=server_name):
+            # Create confirmation embed
+            confirm_embed = discord.Embed(
+                title="⚠️ Confirm Server Deletion",
+                description=f"Are you sure you want to delete the server **{server_name}**? This action cannot be undone.",
+                color=discord.Color.red()
+            )
+
+            # Create confirmation buttons
+            confirm_view = discord.ui.View(timeout=60)
+            confirm_button = discord.ui.Button(label="Confirm Delete", style=discord.ButtonStyle.danger, custom_id=f"confirm_{server_id}")
+            cancel_button = discord.ui.Button(label="Cancel", style=discord.ButtonStyle.secondary, custom_id="cancel")
+
+            async def confirm_callback(interaction):
+                # Delete the server
+                success = await pterodactyl.delete_server(server_id, user_id)
+
+                if success:
+                    success_embed = discord.Embed(
+                        title="✅ Server Deleted",
+                        description=f"Your server **{server_name}** has been deleted successfully.",
+                        color=discord.Color.green()
+                    )
+                    success_embed.add_field(
+                        name="Create a New Server",
+                        value="Use `/create <template>` to create a new server.\nUse `/templates` to see available templates.",
+                        inline=False
+                    )
+                    await interaction.response.edit_message(embed=success_embed, view=None)
+                else:
+                    error_embed = discord.Embed(
+                        title="❌ Error",
+                        description=f"Failed to delete server **{server_name}**. Please try again later or contact an administrator.",
+                        color=discord.Color.red()
+                    )
+                    await interaction.response.edit_message(embed=error_embed, view=None)
+
+            async def cancel_callback(interaction):
+                cancel_embed = discord.Embed(
+                    title="❌ Cancelled",
+                    description="Server deletion has been cancelled.",
+                    color=discord.Color.orange()
+                )
+                await interaction.response.edit_message(embed=cancel_embed, view=None)
+
+            confirm_button.callback = confirm_callback
+            cancel_button.callback = cancel_callback
+
+            confirm_view.add_item(confirm_button)
+            confirm_view.add_item(cancel_button)
+
+            await interaction.response.edit_message(embed=confirm_embed, view=confirm_view)
+
+        button.callback = button_callback
+        view.add_item(button)
+
+    # Add a note about the IDs
+    embed.set_footer(text="Panel ID is what you see in the URL when accessing your server. Internal ID is used by the system.")
+
+    await interaction.followup.send(embed=embed, view=view, ephemeral=True)
+
 @bot.tree.command(name="templates", description="List available server templates")
 async def templates(interaction: discord.Interaction):
     """List all available server templates"""
@@ -469,6 +602,9 @@ async def templates(interaction: discord.Interaction):
     # Add user information if linked
     user_id = str(interaction.user.id)
     if user_id in PTERODACTYL_USERS:
+        # Sync the user's servers first
+        await pterodactyl.sync_user_servers(user_id)
+
         pterodactyl_user_id = PTERODACTYL_USERS[user_id]
         servers = await pterodactyl.get_user_servers(pterodactyl_user_id)
         servers_count = len(servers) if servers else 0

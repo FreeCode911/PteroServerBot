@@ -118,76 +118,61 @@ class PterodactylAPI:
             if egg_variables:
                 print(f"Found {len(egg_variables)} variables for egg {egg_id}")
 
-                # Get detailed variable information
+                # Get detailed variable information for all variables from the egg
                 for var_data in egg_variables:
-                    var_id = var_data.get('attributes', {}).get('id')
-                    if var_id:
-                        var_details = await self.get_egg_variable(nest_id, egg_id, var_id)
-                        if var_details:
-                            env_name = var_details.get('env_variable')
-                            env_default = var_details.get('default_value')
-                            env_required = var_details.get('required', False)
+                    var_attr = var_data.get('attributes', {})
+                    env_name = var_attr.get('env_variable')
+                    env_default = var_attr.get('default_value')
+                    env_required = var_attr.get('required', False)
 
-                            print(f"Variable: {env_name}, Default: {env_default}, Required: {env_required}")
+                    print(f"Variable: {env_name}, Default: {env_default}, Required: {env_required}")
 
-                            if env_name:
-                                environment_vars[env_name] = env_default or ''
+                    if env_name:
+                        environment_vars[env_name] = env_default or ''
 
-            # Get environment variables based on egg type
-            egg_name = egg_details.get('name', '').lower()
-            print(f"Detected egg type: {egg_name}")
-
-            # Set environment variables based on egg type
-            if 'python' in egg_name:
-                # Python application
-                python_vars = {
-                    "USER_UPLOAD": "0",
-                    "AUTO_UPDATE": "0",
-                    "PY_FILE": "main.py",
-                    "REQUIREMENTS_FILE": "requirements.txt",
-                    "STARTUP_CMD": "python"
-                }
-                # Only add variables that aren't already set
-                for key, value in python_vars.items():
-                    if key not in environment_vars:
-                        environment_vars[key] = value
-            elif 'minecraft' in egg_name:
-                # Minecraft server
-                minecraft_vars = {
-                    "SERVER_JARFILE": "server.jar",
-                    "MINECRAFT_VERSION": "latest",
-                    "BUILD_NUMBER": "latest",
-                    "VANILLA_VERSION": "latest"
-                }
-                # Only add variables that aren't already set
-                for key, value in minecraft_vars.items():
-                    if key not in environment_vars:
-                        environment_vars[key] = value
-            elif 'node' in egg_name or 'javascript' in egg_name:
-                # Node.js application
-                node_vars = {
-                    "USER_UPLOAD": "0",
-                    "AUTO_UPDATE": "0",
-                    "JS_FILE": "index.js",
-                    "NODE_PACKAGES": ""
-                }
-                # Only add variables that aren't already set
-                for key, value in node_vars.items():
-                    if key not in environment_vars:
-                        environment_vars[key] = value
-
-            # Add the required Python variables regardless of egg type (to fix the error)
-            required_vars = ["USER_UPLOAD", "AUTO_UPDATE", "PY_FILE", "REQUIREMENTS_FILE"]
-            for var in required_vars:
-                if var not in environment_vars:
-                    environment_vars[var] = "0" if var in ["USER_UPLOAD", "AUTO_UPDATE"] else "main.py" if var == "PY_FILE" else "requirements.txt"
-
-            # If still no environment variables were found, use defaults for Minecraft
+            # If no environment variables were found in the egg, log a warning
             if not environment_vars:
-                environment_vars = {
-                    "SERVER_JARFILE": "server.jar",
-                    "MINECRAFT_VERSION": "latest"
-                }
+                print("No environment variables found in egg relationships")
+
+            # If still no environment variables were found, use some basic defaults based on egg type
+            if not environment_vars:
+                egg_name = egg_details.get('name', '').lower()
+                print(f"No environment variables found. Using basic defaults for egg type: {egg_name}")
+
+                if 'python' in egg_name:
+                    environment_vars = {
+                        "USER_UPLOAD": "0",
+                        "AUTO_UPDATE": "0",
+                        "PY_FILE": "main.py",
+                        "REQUIREMENTS_FILE": "requirements.txt",
+                        "STARTUP_CMD": "python"
+                    }
+                elif 'minecraft' in egg_name:
+                    environment_vars = {
+                        "SERVER_JARFILE": "server.jar",
+                        "MINECRAFT_VERSION": "latest",
+                        "BUILD_NUMBER": "latest",
+                        "VANILLA_VERSION": "latest"
+                    }
+                elif 'node' in egg_name or 'javascript' in egg_name:
+                    environment_vars = {
+                        "USER_UPLOAD": "0",
+                        "AUTO_UPDATE": "0",
+                        "JS_FILE": "index.js",
+                        "NODE_PACKAGES": ""
+                    }
+                else:
+                    # Generic fallback
+                    environment_vars = {
+                        "USER_UPLOAD": "0",
+                        "AUTO_UPDATE": "0"
+                    }
+
+            # Apply template-specific environment variables if available
+            if 'env' in template:
+                print(f"Applying template-specific environment variables: {template['env']}")
+                for key, value in template['env'].items():
+                    environment_vars[key] = value
 
             url = f"{self.base_url}/api/application/servers"
             payload = {
@@ -394,13 +379,100 @@ class PterodactylAPI:
             traceback.print_exc()
             return None
 
+    async def check_server_owner(self, server_id, discord_id):
+        """Check if the user is the owner of the server"""
+        try:
+            # Get server details
+            url = f"{self.base_url}/api/application/servers/{server_id}"
+            response = requests.get(url, headers=self.headers)
+
+            if response.status_code == 200:
+                server_data = response.json()['attributes']
+                pterodactyl_user_id = PTERODACTYL_USERS.get(discord_id)
+
+                # Check if the user is the owner
+                if pterodactyl_user_id and server_data['user'] == pterodactyl_user_id:
+                    return True, server_data
+                else:
+                    return False, None
+            else:
+                print(f"Error getting server details: {response.status_code} - {response.text}")
+                return False, None
+        except Exception as e:
+            print(f"Exception checking server owner: {str(e)}")
+            traceback.print_exc()
+            return False, None
+
+    async def delete_server(self, server_id, discord_id=None):
+        """Delete a server from the Pterodactyl panel"""
+        try:
+            # If discord_id is provided, verify ownership
+            if discord_id:
+                is_owner, _ = await self.check_server_owner(server_id, discord_id)
+                if not is_owner:
+                    print(f"User {discord_id} is not the owner of server {server_id}")
+                    return False
+
+            url = f"{self.base_url}/api/application/servers/{server_id}"
+            response = requests.delete(url, headers=self.headers)
+
+            if response.status_code == 204:
+                print(f"Server {server_id} deleted successfully")
+
+                # Remove the server from all users' server lists
+                for user_id, server_list in USER_SERVERS.items():
+                    if server_id in server_list:
+                        USER_SERVERS[user_id].remove(server_id)
+                        print(f"Removed server {server_id} from user {user_id}'s server list")
+
+                return True
+            else:
+                print(f"Error deleting server: {response.status_code} - {response.text}")
+                return False
+        except Exception as e:
+            print(f"Exception deleting server: {str(e)}")
+            traceback.print_exc()
+            return False
+
+    async def sync_user_servers(self, discord_id):
+        """Sync the user's servers with the Pterodactyl panel"""
+        try:
+            if discord_id not in PTERODACTYL_USERS:
+                return False
+
+            pterodactyl_user_id = PTERODACTYL_USERS[discord_id]
+            servers = await self.get_user_servers(pterodactyl_user_id)
+
+            # Update the USER_SERVERS dictionary
+            if discord_id not in USER_SERVERS:
+                USER_SERVERS[discord_id] = []
+
+            # Clear the current list and add the servers from the panel
+            USER_SERVERS[discord_id] = [server['id'] for server in servers]
+            print(f"Synced servers for user {discord_id}: {USER_SERVERS[discord_id]}")
+
+            return True
+        except Exception as e:
+            print(f"Exception syncing user servers: {str(e)}")
+            traceback.print_exc()
+            return False
+
     async def can_create_server(self, discord_id):
         """Check if a user can create more servers (limit of 2)"""
-        if discord_id not in USER_SERVERS:
-            USER_SERVERS[discord_id] = []
-            return True
+        try:
+            # Sync the user's servers first
+            await self.sync_user_servers(discord_id)
 
-        return len(USER_SERVERS[discord_id]) < 2  # Max 2 servers per user
+            if discord_id not in USER_SERVERS:
+                USER_SERVERS[discord_id] = []
+                return True
+
+            return len(USER_SERVERS[discord_id]) < 2  # Max 2 servers per user
+        except Exception as e:
+            print(f"Exception checking if user can create server: {str(e)}")
+            traceback.print_exc()
+            # Default to allowing server creation if there's an error
+            return True
 
     async def register_server_for_user(self, discord_id, server_id):
         """Register a server as belonging to a user"""
