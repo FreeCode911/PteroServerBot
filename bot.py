@@ -337,7 +337,7 @@ async def servers(interaction: discord.Interaction):
 
     if servers:
         embed = discord.Embed(
-            title="🖥️ Your Servers",
+            title="🖥️ __Your Servers__",
             description=f"You have **{len(servers)}** server(s) out of a maximum of **2**",
             color=discord.Color.blue()
         )
@@ -350,8 +350,8 @@ async def servers(interaction: discord.Interaction):
             if user_response.status_code == 200:
                 user_data = user_response.json()['attributes']
                 embed.add_field(
-                    name="📝 Account Information",
-                    value=f"**Username:** {user_data['username']}\n**Email:** {user_data['email']}",
+                    name="📝 __Account Information__",
+                    value=f"```md\n# Username: {user_data['username']}\n# Email: {user_data['email']}\n```",
                     inline=False
                 )
         except Exception as e:
@@ -427,49 +427,52 @@ async def servers(interaction: discord.Interaction):
             # Create server panel URL
             panel_url = f"{pterodactyl.base_url}/server/{server_id}"
 
-            # Add server field
+            # Add server field with improved formatting
             server_info = (
-                f"**Status:** {status_emoji} {status_text}\n"
-                f"**Connection:** `{connection_info}`\n"
-                f"**Resources:** {memory_formatted} RAM | {disk_formatted} Disk | {cpu_formatted}\n"
-                f"**Panel:** [Access Server]({panel_url})"
+                f"```ini\n"
+                f"[Status]    {status_emoji} {status_text}\n"
+                f"[Connect]   {connection_info}\n"
+                f"[Resources] {memory_formatted} RAM | {disk_formatted} Disk | {cpu_formatted}\n"
+                f"[ID]        {server_id}\n"
+                f"```\n"
+                f"**[➡️ Access Server]({panel_url})**"
             )
 
             embed.add_field(
-                name=f"🎮 {server['name']} (ID: `{server_id}`)",
+                name=f"🎮 __**{server['name']}**__",
                 value=server_info,
-                inline=False
+                inline=True
             )
 
         # Add a note about how to create more servers and delete servers
         if len(servers) < 2:
             embed.add_field(
-                name="💬 Commands",
-                value=f"• Use `/delete <server_id>` to delete a server\n• Use `/create <template>` to create a new server\n• Use `/templates` to see available templates",
+                name="💬 __Available Commands__",
+                value=f"```md\n# /delete - Delete a server\n# /create <template> - Create a new server\n# /templates - View available templates\n```",
                 inline=False
             )
-            embed.set_footer(text=f"You can create {2 - len(servers)} more server(s) out of a maximum of 2.")
+            embed.set_footer(text=f"✨ You can create {2 - len(servers)} more server(s) out of a maximum of 2.")
         else:
             embed.add_field(
-                name="💬 Commands",
-                value=f"• Use `/delete <server_id>` to delete a server\n• Use `/templates` to see available templates",
+                name="💬 __Available Commands__",
+                value=f"```md\n# /delete - Delete a server\n# /templates - View available templates\n```",
                 inline=False
             )
-            embed.set_footer(text="You have reached the maximum number of servers.")
+            embed.set_footer(text="⚠️ You have reached the maximum number of servers.")
 
         await interaction.followup.send(embed=embed, ephemeral=True)
     else:
         embed = discord.Embed(
-            title="🔍 No Servers Found",
-            description="You don't have any servers yet.",
+            title="🔍 __No Servers Found__",
+            description="*You don't have any servers yet.*",
             color=discord.Color.orange()
         )
         embed.add_field(
-            name="🚀 Create a Server",
-            value="Use `/create <template>` to create a new server.\nUse `/templates` to see available templates.",
+            name="🚀 __Getting Started__",
+            value="```md\n# Step 1: View available templates\nUse the /templates command to see what's available\n\n# Step 2: Create your first server\nUse /create <template> to launch your server\n```",
             inline=False
         )
-        embed.set_footer(text="You can create up to 2 servers with your account.")
+        embed.set_footer(text="✨ You can create up to 2 servers with your account.")
         await interaction.followup.send(embed=embed, ephemeral=True)
 
 @bot.tree.command(name="delete", description="Delete one of your servers")
@@ -503,9 +506,9 @@ async def delete_server(interaction: discord.Interaction):
         return
 
     embed = discord.Embed(
-        title="🖥️ Your Servers",
-        description="Select a server to delete by clicking the button below it.",
-        color=discord.Color.blue()
+        title="🖥️ __Select Server to Delete__",
+        description="*Click the button below the server you want to remove.*",
+        color=discord.Color.red()
     )
 
     # Create a view with buttons for each server
@@ -520,9 +523,9 @@ async def delete_server(interaction: discord.Interaction):
 
         # Format the server information
         embed.add_field(
-            name=f"🎮 {server_name}",
-            value=f"**Panel ID:** `{server_identifier}`\n**Internal ID:** `{server_id}`",
-            inline=False
+            name=f"🎮 __**{server_name}**__",
+            value=f"```yaml\nPanel ID: {server_identifier}\nInternal ID: {server_id}\n```",
+            inline=True
         )
 
         # Add a button for this server
@@ -532,8 +535,8 @@ async def delete_server(interaction: discord.Interaction):
         async def button_callback(interaction, server_id=server_id, server_name=server_name):
             # Create confirmation embed
             confirm_embed = discord.Embed(
-                title="⚠️ Confirm Server Deletion",
-                description=f"Are you sure you want to delete the server **{server_name}**? This action cannot be undone.",
+                title="⚠️ __Confirm Server Deletion__",
+                description=f"**Are you sure you want to delete:**\n\n```fix\n{server_name}\n```\n*This action cannot be undone.*",
                 color=discord.Color.red()
             )
 
@@ -548,28 +551,28 @@ async def delete_server(interaction: discord.Interaction):
 
                 if success:
                     success_embed = discord.Embed(
-                        title="✅ Server Deleted",
-                        description=f"Your server **{server_name}** has been deleted successfully.",
+                        title="✅ __Server Deleted Successfully__",
+                        description=f"Your server **{server_name}** has been removed from your account.",
                         color=discord.Color.green()
                     )
                     success_embed.add_field(
-                        name="Create a New Server",
-                        value="Use `/create <template>` to create a new server.\nUse `/templates` to see available templates.",
+                        name="🚀 __Next Steps__",
+                        value="```md\n# Create a New Server\nUse /create <template> to create a new server\n\n# View Templates\nUse /templates to see available options\n```",
                         inline=False
                     )
                     await interaction.response.edit_message(embed=success_embed, view=None)
                 else:
                     error_embed = discord.Embed(
-                        title="❌ Error",
-                        description=f"Failed to delete server **{server_name}**. Please try again later or contact an administrator.",
+                        title="❌ __Error Deleting Server__",
+                        description=f"```diff\n- Failed to delete server: {server_name}\n```\n*Please try again later or contact an administrator.*",
                         color=discord.Color.red()
                     )
                     await interaction.response.edit_message(embed=error_embed, view=None)
 
             async def cancel_callback(interaction):
                 cancel_embed = discord.Embed(
-                    title="❌ Cancelled",
-                    description="Server deletion has been cancelled.",
+                    title="❌ __Operation Cancelled__",
+                    description="*Server deletion has been cancelled.*\n\n```ini\n[Your server remains unchanged]\n```",
                     color=discord.Color.orange()
                 )
                 await interaction.response.edit_message(embed=cancel_embed, view=None)
@@ -586,7 +589,12 @@ async def delete_server(interaction: discord.Interaction):
         view.add_item(button)
 
     # Add a note about the IDs
-    embed.set_footer(text="Panel ID is what you see in the URL when accessing your server. Internal ID is used by the system.")
+    embed.add_field(
+        name="📝 __ID Information__",
+        value="```md\n# Panel ID\nThis is what you see in the URL when accessing your server\n\n# Internal ID\nThis is used by the system for reference\n```",
+        inline=False
+    )
+    embed.set_footer(text="⚠️ Deleting a server is permanent and cannot be undone.")
 
     await interaction.followup.send(embed=embed, view=view, ephemeral=True)
 
