@@ -89,7 +89,7 @@ async def link(interaction: discord.Interaction):
     # Create a view with a button for authentication
     view = discord.ui.View()
     button = discord.ui.Button(label="Link with Discord", style=discord.ButtonStyle.primary, url=oauth_url, emoji="🔑")
-    button = discord.ui.Button2(label="Join Discord Server", style=discord.ButtonStyle.primary, url="https://discord.gg/JzDArmmmy7", emoji="🧿")
+    button2 = discord.ui.Button(label="Join Discord Server", style=discord.ButtonStyle.primary, url="https://discord.gg/JzDArmmmy7", emoji="🧿")
     view.add_item(button)
     view.add_item(button2)
 
