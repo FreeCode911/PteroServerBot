@@ -67,7 +67,7 @@ DISCORD_TOKEN_URL = DISCORD_API_BASE_URL + '/oauth2/token'
 
 # Required Discord server ID and invite
 REQUIRED_SERVER_ID = '1186648150027554937'
-DISCORD_SERVER_INVITE = 'https://discord.gg/your-invite-code'  # Replace with your actual invite code
+DISCORD_SERVER_INVITE = 'https://discord.gg/JzDArmmmy7'  # Replace with your actual invite code
 
 # Allow OAuth2 to work with HTTP (for development only)
 import os
