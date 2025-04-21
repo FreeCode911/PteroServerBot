@@ -37,7 +37,7 @@ SERVER_TEMPLATES = {
         'disk': 2048,   # Disk space in MB
         'cpu': 200,      # CPU limit (100 = 1 core)
         'nest': 5,       # Nest ID (default is 1 for Minecraft)
-        'egg': 15,        # Egg ID (default is 1 for Vanilla Minecraft)
+        'egg': 18,        # Egg ID (default is 1 for Vanilla Minecraft)
     },
     'lavalink': {
         'name': 'Lavalink',
@@ -56,6 +56,16 @@ SERVER_TEMPLATES = {
         'cpu': 200,      # CPU limit (300 = 3 cores)
         'nest': 5,       # Nest ID (default is 1 for Minecraft)
         'egg': 22,        # Egg ID (default is 1 for Vanilla Minecraft)
+    # Add more templates as needed
+    },
+    'proot-vps': {
+        'name': 'Proot VPS',
+        'description': 'Proot VPS',
+        'memory': 4096,  # RAM in MB
+        'disk': 2048,   # Disk space in MB
+        'cpu': 200,      # CPU limit (300 = 3 cores)
+        'nest': 5,       # Nest ID (default is 1 for Minecraft)
+        'egg': 25,        # Egg ID (default is 1 for Vanilla Minecraft)
     # Add more templates as needed
     },
     'web-hosting': {
