@@ -6,6 +6,7 @@ import random
 import secrets
 import traceback
 from config import PTERODACTYL_URL, PTERODACTYL_API_KEY, SERVER_TEMPLATES, USER_SERVERS, PTERODACTYL_USERS
+import persistence
 
 class PterodactylAPI:
     def __init__(self):
@@ -328,6 +329,9 @@ class PterodactylAPI:
         if user:
             # Store the link in our database
             PTERODACTYL_USERS[discord_id] = user['id']
+            # Save the updated data to disk
+            persistence.save_pterodactyl_users(PTERODACTYL_USERS)
+            print(f"Saved link between Discord user {discord_id} and Pterodactyl user {user['id']}")
             return user
 
         return None
@@ -370,7 +374,9 @@ class PterodactylAPI:
             if user:
                 # Store the link in our database
                 PTERODACTYL_USERS[discord_id] = user['id']
-                print(f"Linked Discord user {discord_id} to Pterodactyl user {user['id']}")
+                # Save the updated data to disk
+                persistence.save_pterodactyl_users(PTERODACTYL_USERS)
+                print(f"Linked Discord user {discord_id} to Pterodactyl user {user['id']} and saved to disk")
                 return user
 
             return None
@@ -425,6 +431,10 @@ class PterodactylAPI:
                         USER_SERVERS[user_id].remove(server_id)
                         print(f"Removed server {server_id} from user {user_id}'s server list")
 
+                # Save the updated data to disk
+                persistence.save_user_servers(USER_SERVERS)
+                print(f"Saved updated user servers data to disk after deleting server {server_id}")
+
                 return True
             else:
                 print(f"Error deleting server: {response.status_code} - {response.text}")
@@ -450,6 +460,10 @@ class PterodactylAPI:
             # Clear the current list and add the servers from the panel
             USER_SERVERS[discord_id] = [server['id'] for server in servers]
             print(f"Synced servers for user {discord_id}: {USER_SERVERS[discord_id]}")
+
+            # Save the updated data to disk
+            persistence.save_user_servers(USER_SERVERS)
+            print(f"Saved updated user servers data to disk after syncing for user {discord_id}")
 
             return True
         except Exception as e:
@@ -480,6 +494,11 @@ class PterodactylAPI:
             USER_SERVERS[discord_id] = []
 
         USER_SERVERS[discord_id].append(server_id)
+
+        # Save the updated data to disk
+        persistence.save_user_servers(USER_SERVERS)
+        print(f"Saved updated user servers data to disk after registering server {server_id} for user {discord_id}")
+
         return True
 
     async def reset_user_password(self, user_id):

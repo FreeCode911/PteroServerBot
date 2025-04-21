@@ -1,5 +1,6 @@
 import os
 from dotenv import load_dotenv
+import persistence
 
 # Load environment variables from .env file
 load_dotenv()
@@ -85,8 +86,13 @@ SERVER_TEMPLATES = {
 # User Limits
 MAX_SERVERS_PER_USER = 2
 
-# Database for tracking user servers (simple in-memory for now)
-# In a production environment, you would use a real database
-USER_SERVERS = {}  # Format: {discord_user_id: [server_id1, server_id2, ...]}
-USER_AUTH_CODES = {}  # Format: {auth_code: discord_user_id}
-PTERODACTYL_USERS = {}  # Format: {discord_user_id: pterodactyl_user_id}
+# Database for tracking user servers
+# Load data from disk if available, otherwise start with empty dictionaries
+USER_SERVERS = persistence.load_user_servers()  # Format: {discord_user_id: [server_id1, server_id2, ...]}
+USER_AUTH_CODES = persistence.load_user_auth_codes()  # Format: {auth_code: discord_user_id}
+PTERODACTYL_USERS = persistence.load_pterodactyl_users()  # Format: {discord_user_id: pterodactyl_user_id}
+
+# Print loaded data for debugging
+print(f"Loaded {len(USER_SERVERS)} user server records")
+print(f"Loaded {len(USER_AUTH_CODES)} auth codes")
+print(f"Loaded {len(PTERODACTYL_USERS)} linked Pterodactyl users")

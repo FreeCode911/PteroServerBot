@@ -8,6 +8,7 @@ from requests_oauthlib import OAuth2Session
 from config import (FLASK_SECRET_KEY, WEB_HOST, WEB_PORT, USER_AUTH_CODES,
                    DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET, DISCORD_REDIRECT_URI,
                    PTERODACTYL_USERS)
+import persistence
 
 app = Flask(__name__)
 app.secret_key = FLASK_SECRET_KEY
@@ -92,6 +93,10 @@ def auth(discord_id):
 
     # Store the auth code with the Discord ID
     USER_AUTH_CODES[auth_code] = discord_id
+
+    # Save the updated auth codes to disk
+    persistence.save_user_auth_codes(USER_AUTH_CODES)
+    print(f"Saved auth code for Discord user {discord_id}")
 
     # Set a session variable to track this auth code
     session['auth_code'] = auth_code
