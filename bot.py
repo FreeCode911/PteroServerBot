@@ -75,11 +75,12 @@ async def link(interaction: discord.Interaction):
         description="*Connect your Discord account to the Pterodactyl Panel to create and manage servers.*",
         color=discord.Color.blue()
     )
-    embed.add_field(
-        name="❗ __Server Membership Required__",
-        value="```diff\n+ You must be a member of our Discord server to use this service\n```\nIf you're not already a member, please join the server first.",
-        inline=False
-    )
+    # Server membership requirement removed
+    # embed.add_field(
+    #     name="❗ __Server Membership Required__",
+    #     value="```diff\n+ You must be a member of our Discord server to use this service\n```\nIf you're not already a member, please join the server first.",
+    #     inline=False
+    # )
     embed.add_field(
         name="📝 __Instructions__",
         value="```md\n1. Click the button below\n2. Authorize with Discord\n3. Your account will be linked automatically\n4. Return to Discord to use bot commands\n```",
@@ -89,9 +90,10 @@ async def link(interaction: discord.Interaction):
     # Create a view with a button for authentication
     view = discord.ui.View()
     button = discord.ui.Button(label="Link with Discord", style=discord.ButtonStyle.primary, url=oauth_url, emoji="🔑")
-    button2 = discord.ui.Button(label="Join Discord Server", style=discord.ButtonStyle.primary, url="https://discord.gg/JzDArmmmy7", emoji="🧿")
+    # Server join button removed
+    # button2 = discord.ui.Button(label="Join Discord Server", style=discord.ButtonStyle.primary, url="https://discord.gg/JzDArmmmy7", emoji="🧿")
     view.add_item(button)
-    view.add_item(button2)
+    # view.add_item(button2)
 
     await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 

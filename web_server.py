@@ -66,9 +66,10 @@ DISCORD_API_BASE_URL = 'https://discord.com/api'
 DISCORD_AUTHORIZATION_BASE_URL = DISCORD_API_BASE_URL + '/oauth2/authorize'
 DISCORD_TOKEN_URL = DISCORD_API_BASE_URL + '/oauth2/token'
 
-# Required Discord server ID and invite
-REQUIRED_SERVER_ID = '1186648150027554937'
-DISCORD_SERVER_INVITE = 'https://discord.gg/JzDArmmmy7'  # Replace with your actual invite code
+# Discord server membership is no longer required
+# The following lines are kept as comments for reference
+# REQUIRED_SERVER_ID = '1186648150027554937'
+# DISCORD_SERVER_INVITE = 'https://discord.gg/JzDArmmmy7'
 
 # Allow OAuth2 to work with HTTP (for development only)
 import os
@@ -159,25 +160,19 @@ def callback():
 
         print(f"Got Discord user info: {username} ({user_id}) - {email}")
 
+        # Update the discord_id with the one from the API, which is more reliable
+        # This fixes issues where the session discord_id might be different from the actual user's Discord ID
+        discord_id = user_id
+        session['discord_id'] = user_id
+        print(f"Updated Discord ID to {discord_id} based on API response")
+
         if not email:
             return render_template('error.html', error="Email access is required. Please authorize with email access.")
 
-        # Check if user is a member of the required server
+        # Server membership check removed
+        # We still get the guilds data for potential future use
         guilds_response = oauth.get(DISCORD_API_BASE_URL + '/users/@me/guilds')
         guilds_data = guilds_response.json()
-
-        # Check if the required server is in the user's guild list
-        is_member = False
-        for guild in guilds_data:
-            if guild.get('id') == REQUIRED_SERVER_ID:
-                is_member = True
-                break
-
-        if not is_member:
-            return render_template('error.html',
-                                  error=f"You must be a member of our Discord server to use this service. "
-                                        f"Please <a href='{DISCORD_SERVER_INVITE}' target='_blank'>join our server</a> first, "
-                                        f"then try again.")
 
         # Link user to Pterodactyl
         if pterodactyl_api:
