@@ -716,7 +716,7 @@ async def templates(interaction: discord.Interaction):
         )
 
     embed.set_footer(text="✨ Choose a template that best fits your project requirements.")
-    await interaction.response.send_message(embed=embed, ephemeral=True)
+    await interaction.response.send_message(embed=embed)
 
 @bot.tree.command(name="reset-password", description="Reset your Pterodactyl panel password")
 async def reset_password(interaction: discord.Interaction):
