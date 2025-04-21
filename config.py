@@ -37,7 +37,7 @@ SERVER_TEMPLATES = {
         'disk': 2048,   # Disk space in MB
         'cpu': 200,      # CPU limit (100 = 1 core)
         'nest': 5,       # Nest ID (default is 1 for Minecraft)
-        'egg': 18,        # Egg ID (default is 1 for Vanilla Minecraft)
+        'egg': 15,        # Egg ID (default is 1 for Vanilla Minecraft)
     },
     'lavalink': {
         'name': 'Lavalink',
