@@ -71,22 +71,27 @@ async def link(interaction: discord.Interaction):
     oauth_url = f"{DISCORD_REDIRECT_URI.replace('/callback', '')}/oauth?discord_id={user_id}"
 
     embed = discord.Embed(
-        title="Link Your Account",
-        description="Click the link below to link your Discord account to the Pterodactyl Panel.",
+        title="🔗 __Link Your Account__",
+        description="*Connect your Discord account to the Pterodactyl Panel to create and manage servers.*",
         color=discord.Color.blue()
     )
     embed.add_field(
-        name="Authentication Link",
-        value=f"[Link with Discord]({oauth_url})",
+        name="❗ __Server Membership Required__",
+        value="```diff\n+ You must be a member of our Discord server to use this service\n```\nIf you're not already a member, please join the server first.",
         inline=False
     )
     embed.add_field(
-        name="Instructions",
-        value="Click the link above and authorize with Discord to automatically link your account. You'll be able to create and manage servers after linking your account.",
+        name="📝 __Instructions__",
+        value="```md\n1. Click the button below\n2. Authorize with Discord\n3. Your account will be linked automatically\n4. Return to Discord to use bot commands\n```",
         inline=False
     )
 
-    await interaction.response.send_message(embed=embed, ephemeral=True)
+    # Create a view with a button for authentication
+    view = discord.ui.View()
+    button = discord.ui.Button(label="Link with Discord", style=discord.ButtonStyle.primary, url=oauth_url, emoji="🔑")
+    view.add_item(button)
+
+    await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
     # Wait to see if the user completes OAuth
     await asyncio.sleep(30)  # Wait 30 seconds
@@ -105,25 +110,62 @@ async def link(interaction: discord.Interaction):
                 user_data = user_response.json()['attributes']
 
                 embed = discord.Embed(
-                    title="Account Linked Successfully",
-                    description="Your Discord account has been linked to your Pterodactyl account!",
+                    title="✅ __Account Linked Successfully__",
+                    description="*Your Discord account has been linked to your Pterodactyl account!*\n\n```diff\n+ Connection established successfully\n```",
                     color=discord.Color.green()
                 )
-                embed.add_field(name="Username", value=user_data['username'], inline=True)
-                embed.add_field(name="Email", value=user_data['email'], inline=True)
-                embed.add_field(name="Panel URL", value=f"[Access Pterodactyl Panel]({pterodactyl.base_url})", inline=False)
-                embed.add_field(name="Next Steps", value="Use `/create` to create a new server or `/servers` to view your existing servers.", inline=False)
+                embed.add_field(
+                    name="📝 __Account Information__",
+                    value=f"```yaml\nUsername: {user_data['username']}\nEmail: {user_data['email']}\n```",
+                    inline=False
+                )
 
-                await interaction.followup.send(embed=embed, ephemeral=True)
+                # Create a view with a button for the panel
+                view = discord.ui.View()
+                panel_button = discord.ui.Button(
+                    label="Access Pterodactyl Panel",
+                    style=discord.ButtonStyle.link,
+                    url=pterodactyl.base_url,
+                    emoji="🔗"
+                )
+                view.add_item(panel_button)
+
+                embed.add_field(
+                    name="🚀 __Next Steps__",
+                    value="```md\n# Create a Server\nUse /create <template> to create a new server\n\n# View Templates\nUse /templates to see available options\n\n# View Your Servers\nUse /servers to see your existing servers\n```",
+                    inline=False
+                )
+
+                # Send the message with the button
+                await interaction.followup.send(embed=embed, view=view, ephemeral=True)
                 return
         except Exception as e:
             print(f"Error getting user details: {e}")
 
         # Fallback message if we can't get user details
-        await interaction.followup.send(
-            f"Your account has been successfully linked! You can now use `/create` to create servers.\n\nPterodactyl Panel: {pterodactyl.base_url}",
-            ephemeral=True
+        embed = discord.Embed(
+            title="✅ __Account Linked Successfully__",
+            description="*Your Discord account has been linked to your Pterodactyl account!*",
+            color=discord.Color.green()
         )
+
+        # Create a view with a button for the panel
+        view = discord.ui.View()
+        panel_button = discord.ui.Button(
+            label="Access Pterodactyl Panel",
+            style=discord.ButtonStyle.link,
+            url=pterodactyl.base_url,
+            emoji="🔗"
+        )
+        view.add_item(panel_button)
+
+        embed.add_field(
+            name="🚀 __Next Steps__",
+            value="```md\n# Create a Server\nUse /create <template> to create a new server\n\n# View Templates\nUse /templates to see available options\n```",
+            inline=False
+        )
+
+        await interaction.followup.send(embed=embed, view=view, ephemeral=True)
 
 # Define a template autocomplete function
 async def template_autocomplete(interaction: discord.Interaction, current: str) -> list[app_commands.Choice[str]]:
@@ -602,8 +644,8 @@ async def delete_server(interaction: discord.Interaction):
 async def templates(interaction: discord.Interaction):
     """List all available server templates"""
     embed = discord.Embed(
-        title="📎 Available Server Templates",
-        description="Here are the available templates for creating a server. Use `/create <template>` to create a server.",
+        title="📎 __Available Server Templates__",
+        description="*Select a template that fits your needs to create a new server.*\n\n**To create a server:** `/create <template>`",
         color=discord.Color.blue()
     )
 
@@ -619,8 +661,8 @@ async def templates(interaction: discord.Interaction):
         servers_remaining = max(0, 2 - servers_count)
 
         embed.add_field(
-            name="📊 Your Server Quota",
-            value=f"You have **{servers_count}** server(s) out of a maximum of **2**.\nYou can create **{servers_remaining}** more server(s).",
+            name="📊 __Your Server Quota__",
+            value=f"```yaml\nCurrent Servers: {servers_count}/2\nRemaining Slots: {servers_remaining}\n```",
             inline=False
         )
 
@@ -657,20 +699,21 @@ async def templates(interaction: discord.Interaction):
             emoji = "🔸"  # Medium circle for medium templates
 
         # Format the template information
-        template_info = f"**{template_data['description']}**\n\n"
-        template_info += f"**Resources:**\n"
-        template_info += f"• RAM: **{memory_formatted}**\n"
-        template_info += f"• CPU: **{cpu_formatted}**\n"
-        template_info += f"• Disk: **{disk_formatted}**\n\n"
-        template_info += f"To create: `/create {template_name}`"
+        template_info = f"*{template_data['description']}*\n\n"
+        template_info += f"```ini\n"
+        template_info += f"[RAM]  {memory_formatted}\n"
+        template_info += f"[CPU]  {cpu_formatted}\n"
+        template_info += f"[Disk] {disk_formatted}\n"
+        template_info += f"```\n"
+        template_info += f"**Create with:** `/create {template_name}`"
 
         embed.add_field(
-            name=f"{emoji} {template_name.capitalize()} Template",
+            name=f"{emoji} __**{template_name.capitalize()}**__",
             value=template_info,
-            inline=False
+            inline=True
         )
 
-    embed.set_footer(text="Templates provide different resource allocations for your server.")
+    embed.set_footer(text="✨ Choose a template that best fits your project requirements.")
     await interaction.response.send_message(embed=embed, ephemeral=True)
 
 @bot.tree.command(name="reset-password", description="Reset your Pterodactyl panel password")
@@ -688,8 +731,8 @@ async def reset_password(interaction: discord.Interaction):
 
     # Show initial message
     embed = discord.Embed(
-        title="🔑 Password Reset",
-        description="Resetting your Pterodactyl panel password...",
+        title="🔑 __Password Reset in Progress__",
+        description="*Resetting your Pterodactyl panel password...*\n\n```yaml\nStatus: Processing\n```",
         color=discord.Color.blue()
     )
     await interaction.response.send_message(embed=embed, ephemeral=True)
@@ -719,50 +762,50 @@ async def reset_password(interaction: discord.Interaction):
 
     if new_password:
         success_embed = discord.Embed(
-            title="🔓 Password Reset Successful",
-            description="Your Pterodactyl panel password has been reset successfully.",
+            title="🔓 __Password Reset Successful__",
+            description="*Your Pterodactyl panel password has been reset successfully.*\n\n```diff\n+ New credentials are ready to use\n```",
             color=discord.Color.green()
         )
 
         # Add user information
         if username != "Unknown" and email != "Unknown":
             success_embed.add_field(
-                name="📝 Account Information",
-                value=f"**Username:** {username}\n**Email:** {email}",
+                name="📝 __Account Information__",
+                value=f"```yaml\nUsername: {username}\nEmail: {email}\n```",
                 inline=False
             )
 
         # Add password field with styling
         success_embed.add_field(
-            name="🅰️ New Password",
-            value=f"```{new_password}```",
+            name="🅰️ __New Password__",
+            value=f"```fix\n{new_password}\n```",
             inline=False
         )
 
         success_embed.add_field(
-            name="⚠️ Important",
-            value="**Please save this password!** You will need it to log in to the Pterodactyl Panel. This password will not be shown again.",
+            name="⚠️ __IMPORTANT SECURITY NOTICE__",
+            value="**Please save this password immediately!**\n\n• This password will **not** be shown again\n• You will need it to log in to the Pterodactyl Panel\n• For security, change this password after logging in",
             inline=False
         )
 
         success_embed.add_field(
-            name="🔗 Panel URL",
-            value=f"[Access Pterodactyl Panel]({pterodactyl.base_url})",
+            name="🔗 __Access Your Panel__",
+            value=f"**[Click Here to Log In to Pterodactyl Panel]({pterodactyl.base_url})**",
             inline=False
         )
 
-        success_embed.set_footer(text="For security reasons, you should change this password after logging in.")
+        success_embed.set_footer(text="⚠️ Never share your password with anyone, including server administrators.")
 
         await interaction.edit_original_response(embed=success_embed)
     else:
         error_embed = discord.Embed(
-            title="❌ Password Reset Failed",
-            description="Failed to reset your password. Please try again later.",
+            title="❌ __Password Reset Failed__",
+            description="*We encountered an issue while trying to reset your password.*\n\n```diff\n- Unable to complete password reset\n```",
             color=discord.Color.red()
         )
         error_embed.add_field(
-            name="What to do next",
-            value="Please try again later or contact an administrator for assistance.",
+            name="🔍 __Troubleshooting Steps__",
+            value="```md\n# Wait a few minutes and try again\n# Check your connection to the server\n# Contact an administrator if the issue persists\n```",
             inline=False
         )
         await interaction.edit_original_response(embed=error_embed)
@@ -787,54 +830,91 @@ async def panel_info(interaction: discord.Interaction):
 
         # Create an embed for the panel information
         embed = discord.Embed(
-            title="Pterodactyl Panel Configuration",
-            description=f"Connected to: {PTERODACTYL_URL}",
+            title="💻 __Pterodactyl Panel Configuration__",
+            description=f"*System information for administrators*\n\n**Panel URL:** `{PTERODACTYL_URL}`",
             color=discord.Color.blue()
         )
 
-        # Add nest information
-        nest_info = ""
+        # Get configured eggs from SERVER_TEMPLATES
+        configured_eggs = {}
+        for template_name, template_data in SERVER_TEMPLATES.items():
+            nest_id = template_data.get('nest')
+            egg_id = template_data.get('egg')
+            if nest_id and egg_id:
+                if nest_id not in configured_eggs:
+                    configured_eggs[nest_id] = []
+                if egg_id not in configured_eggs[nest_id]:
+                    configured_eggs[nest_id].append(egg_id)
+
+        # Add nest information (only configured ones)
+        nest_info = "```yaml\n"
         for nest in nests:
             nest_attr = nest['attributes']
-            nest_info += f"**{nest_attr['name']}** (ID: {nest_attr['id']})\n"
+            nest_id = nest_attr['id']
 
-            # Get eggs for this nest
-            eggs = await pterodactyl.get_eggs(nest_attr['id'])
-            if eggs:
-                for egg in eggs:
-                    egg_attr = egg['attributes']
-                    nest_info += f"  - {egg_attr['name']} (ID: {egg_attr['id']})\n"
-            else:
-                nest_info += "  - No eggs found for this nest\n"
+            # Only show nests that have configured eggs
+            if nest_id in configured_eggs:
+                nest_info += f"# {nest_attr['name']} (ID: {nest_id})\n"
 
-        embed.add_field(name="Available Nests and Eggs", value=nest_info, inline=False)
+                # Get eggs for this nest
+                eggs = await pterodactyl.get_eggs(nest_id)
+                if eggs:
+                    found_eggs = False
+                    for egg in eggs:
+                        egg_attr = egg['attributes']
+                        egg_id = egg_attr['id']
+
+                        # Only show eggs that are configured in SERVER_TEMPLATES
+                        if egg_id in configured_eggs[nest_id]:
+                            found_eggs = True
+                            # Find which template uses this egg
+                            template_names = []
+                            for template_name, template_data in SERVER_TEMPLATES.items():
+                                if template_data.get('nest') == nest_id and template_data.get('egg') == egg_id:
+                                    template_names.append(template_name)
+
+                            template_str = f" (Used in: {', '.join(template_names)})" if template_names else ""
+                            nest_info += f"  - {egg_attr['name']} (ID: {egg_id}){template_str}\n"
+
+                    if not found_eggs:
+                        nest_info += "  - No configured eggs found for this nest\n"
+                else:
+                    nest_info += "  - No eggs found for this nest\n"
+        nest_info += "```"
+
+        embed.add_field(name="🐥 __Configured Nests and Eggs__", value=nest_info, inline=False)
 
         # Get nodes
         nodes = await pterodactyl.get_nodes()
         if nodes:
-            node_info = ""
+            node_info = "```ini\n"
             for node in nodes:
                 node_attr = node['attributes']
-                node_info += f"**{node_attr['name']}** (ID: {node_attr['id']})\n"
-                node_info += f"  - Location: {node_attr['location_id']}\n"
-                node_info += f"  - Memory: {node_attr['memory']} MB\n"
-                node_info += f"  - Disk: {node_attr['disk']} MB\n"
+                node_info += f"[{node_attr['name']}] (ID: {node_attr['id']})\n"
+                node_info += f"  Location = {node_attr['location_id']}\n"
+                memory_formatted = f"{node_attr['memory']} MB" if node_attr['memory'] < 1024 else f"{node_attr['memory']/1024:.1f} GB"
+                disk_formatted = f"{node_attr['disk']} MB" if node_attr['disk'] < 1024 else f"{node_attr['disk']/1024:.1f} GB"
+                node_info += f"  Memory = {memory_formatted}\n"
+                node_info += f"  Disk = {disk_formatted}\n\n"
+            node_info += "```"
 
-            embed.add_field(name="Available Nodes", value=node_info, inline=False)
+            embed.add_field(name="💻 __Available Nodes__", value=node_info, inline=False)
         else:
-            embed.add_field(name="Available Nodes", value="No nodes found", inline=False)
+            embed.add_field(name="💻 __Available Nodes__", value="```diff\n- No nodes found\n```", inline=False)
 
         # Get locations
         locations = await pterodactyl.get_locations()
         if locations:
-            location_info = ""
+            location_info = "```md\n"
             for location in locations:
                 location_attr = location['attributes']
-                location_info += f"**{location_attr['short']}** (ID: {location_attr['id']}) - {location_attr['long']}\n"
+                location_info += f"# {location_attr['short']} (ID: {location_attr['id']})\n"
+                location_info += f"  {location_attr['long']}\n\n"
+            location_info += "```"
 
-            embed.add_field(name="Available Locations", value=location_info, inline=False)
+            embed.add_field(name="📍 __Available Locations__", value=location_info, inline=False)
         else:
-            embed.add_field(name="Available Locations", value="No locations found", inline=False)
+            embed.add_field(name="📍 __Available Locations__", value="```diff\n- No locations found\n```", inline=False)
 
         await interaction.followup.send(embed=embed, ephemeral=True)
     except Exception as e:

@@ -42,13 +42,13 @@
 <body>
     <div class="error-icon">✗</div>
     <h1>Authentication Error</h1>
-    
+
     <div class="error-box">
-        {{ error }}
+        {{ error|safe }}
     </div>
-    
+
     <p>Please try again or contact an administrator for assistance.</p>
-    
+
     <a href="/" class="button">Go Back</a>
 </body>
 </html>

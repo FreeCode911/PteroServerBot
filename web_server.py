@@ -65,6 +65,10 @@ DISCORD_API_BASE_URL = 'https://discord.com/api'
 DISCORD_AUTHORIZATION_BASE_URL = DISCORD_API_BASE_URL + '/oauth2/authorize'
 DISCORD_TOKEN_URL = DISCORD_API_BASE_URL + '/oauth2/token'
 
+# Required Discord server ID and invite
+REQUIRED_SERVER_ID = '1186648150027554937'
+DISCORD_SERVER_INVITE = 'https://discord.gg/your-invite-code'  # Replace with your actual invite code
+
 # Allow OAuth2 to work with HTTP (for development only)
 import os
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
@@ -109,8 +113,8 @@ def oauth():
     discord_id = session['discord_id']
     print(f"Starting OAuth flow for Discord ID: {discord_id}")
 
-    # Create OAuth2 session
-    oauth = OAuth2Session(DISCORD_CLIENT_ID, redirect_uri=DISCORD_REDIRECT_URI, scope=['identify', 'email'])
+    # Create OAuth2 session with guilds scope to check server membership
+    oauth = OAuth2Session(DISCORD_CLIENT_ID, redirect_uri=DISCORD_REDIRECT_URI, scope=['identify', 'email', 'guilds'])
     authorization_url, state = oauth.authorization_url(DISCORD_AUTHORIZATION_BASE_URL)
 
     # Store state for later validation
@@ -152,6 +156,23 @@ def callback():
 
         if not email:
             return render_template('error.html', error="Email access is required. Please authorize with email access.")
+
+        # Check if user is a member of the required server
+        guilds_response = oauth.get(DISCORD_API_BASE_URL + '/users/@me/guilds')
+        guilds_data = guilds_response.json()
+
+        # Check if the required server is in the user's guild list
+        is_member = False
+        for guild in guilds_data:
+            if guild.get('id') == REQUIRED_SERVER_ID:
+                is_member = True
+                break
+
+        if not is_member:
+            return render_template('error.html',
+                                  error=f"You must be a member of our Discord server to use this service. "
+                                        f"Please <a href='{DISCORD_SERVER_INVITE}' target='_blank'>join our server</a> first, "
+                                        f"then try again.")
 
         # Link user to Pterodactyl
         if pterodactyl_api:
