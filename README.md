@@ -93,15 +93,13 @@ Example:
 ```python
 SERVER_TEMPLATES = {
     'softerwire': {
-        'name': 'Softerwire Server',
-        'description': 'A server created with the Softerwire template',
-        'memory': 2048,  # RAM in MB
-        'disk': 10240,   # Disk space in MB
-        'cpu': 100,      # CPU limit (100 = 1 core)
-        'nest': 1,       # Nest ID
-        'egg': 1,        # Egg ID
-        'location': 1,   # Location ID
-        'node': 1        # Node ID
+        'name': 'Softerwire',
+        'description': 'Softerwire Server',
+        'memory': 4096,  # RAM in MB
+        'disk': 2048,    # Disk space in MB
+        'cpu': 200,      # CPU limit (300 = 3 cores)
+        'nest': 5,       # Nest ID (default is 1 for Minecraft)
+        'egg': 25,       # Egg ID (default is 1 for Vanilla Minecraft)
     },
     # Add more templates as needed
 }
