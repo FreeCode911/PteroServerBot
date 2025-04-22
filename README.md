@@ -1,4 +1,4 @@
-# Pterodactyl Discord Bot
+# PteroServerBot
 
 A Discord bot for managing Pterodactyl Panel servers. This bot allows users to link their Discord accounts to the Pterodactyl Panel and create game servers with predefined resource configurations.
 
