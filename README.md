@@ -6,6 +6,9 @@ A Discord bot for managing Pterodactyl Panel servers. This bot allows users to l
 
 - `/link` command: Authenticates users and links their Discord account to the Pterodactyl Panel
 - `/create` command: Creates a new server based on predefined templates
+- `/delete` command: Delete one of your servers
+- `/reset-password` command: Reset your Pterodactyl panel password
+- `/panel-info` command: Get information about the Pterodactyl panel configuration
 - `/servers` command: Lists all servers owned by the user
 - `/templates` command: Lists all available server templates with their specifications
 - User limit: Each user can create up to 2 servers
@@ -21,8 +24,8 @@ A Discord bot for managing Pterodactyl Panel servers. This bot allows users to l
 
 1. Clone this repository:
    ```
-   git clone https://github.com/yourusername/pterodactyl-discord-bot.git
-   cd pterodactyl-discord-bot
+   git clone https://github.com/FreeCode911/PteroServerBot.git
+   cd PteroServerBot
    ```
 
 2. Create a virtual environment and install dependencies:
